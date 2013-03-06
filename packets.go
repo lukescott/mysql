@@ -491,7 +491,9 @@ func (rows *mysqlRows) readRow(dest []driver.Value) (err error) {
 			if !isNull {
 				continue
 			} else {
-				dest[i] = nil
+				if !rows.mc.zeroNULL {
+					dest[i] = nil
+				}
 				continue
 			}
 		}
@@ -720,17 +722,26 @@ func (rc *mysqlRows) readBinaryRow(dest []driver.Value) (err error) {
 		// Field is NULL
 		// (byte >> bit-pos) % 2 == 1
 		if ((nullBitMap[(i+2)>>3] >> uint((i+2)&7)) & 1) == 1 {
-			dest[i] = nil
-			continue
+			if !rc.mc.zeroNULL {
+				dest[i] = nil
+				continue
+			} else {
+				dest[i] = []byte{}
+				continue
+			}
 		}
 
 		unsigned = rc.columns[i].flags&flagUnsigned != 0
 
-		// Convert to byte-coded string
 		switch rc.columns[i].fieldType {
 		case fieldTypeNULL:
-			dest[i] = nil
-			continue
+			if !rc.mc.zeroNULL {
+				dest[i] = nil
+				continue
+			} else {
+				dest[i] = []byte{}
+				continue
+			}
 
 		// Numeric Typs
 		case fieldTypeTiny:
@@ -796,8 +807,13 @@ func (rc *mysqlRows) readBinaryRow(dest []driver.Value) (err error) {
 				if !isNull {
 					continue
 				} else {
-					dest[i] = nil
-					continue
+					if !rc.mc.zeroNULL {
+						dest[i] = nil
+						continue
+					} else {
+						dest[i] = []byte{}
+						continue
+					}
 				}
 			}
 			return // err
@@ -810,9 +826,14 @@ func (rc *mysqlRows) readBinaryRow(dest []driver.Value) (err error) {
 
 			if num == 0 {
 				if isNull {
-					dest[i] = nil
 					pos++ // always n=1
-					continue
+					if !rc.mc.zeroNULL {
+						dest[i] = nil
+						continue
+					} else {
+						dest[i] = []byte{}
+						continue
+					}
 				} else {
 					dest[i] = []byte("0000-00-00")
 					pos += n
@@ -835,9 +856,14 @@ func (rc *mysqlRows) readBinaryRow(dest []driver.Value) (err error) {
 
 			if num == 0 {
 				if isNull {
-					dest[i] = nil
 					pos++ // always n=1
-					continue
+					if !rc.mc.zeroNULL {
+						dest[i] = nil
+						continue
+					} else {
+						dest[i] = []byte{}
+						continue
+					}
 				} else {
 					dest[i] = []byte("00:00:00")
 					pos += n
@@ -886,9 +912,14 @@ func (rc *mysqlRows) readBinaryRow(dest []driver.Value) (err error) {
 
 			if num == 0 {
 				if isNull {
-					dest[i] = nil
 					pos++ // always n=1
-					continue
+					if !rc.mc.zeroNULL {
+						dest[i] = nil
+						continue
+					} else {
+						dest[i] = []byte{}
+						continue
+					}
 				} else {
 					dest[i] = []byte("0000-00-00 00:00:00")
 					pos += n

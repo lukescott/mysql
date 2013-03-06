@@ -27,6 +27,7 @@ type mysqlConn struct {
 	sequence     uint8
 	affectedRows uint64
 	insertId     uint64
+	zeroNULL     bool
 }
 
 type config struct {
@@ -64,6 +65,11 @@ func (mc *mysqlConn) handleParams() (err error) {
 		// Compression
 		case "compress":
 			err = errors.New("Compression not implemented yet")
+
+		case "zeroNULL":
+			if val == "true" {
+				mc.zeroNULL = true
+			}
 
 		// System Vars
 		default:
